@@ -1,6 +1,6 @@
 {
   "name": "@medable/jest-evidence-collector-environment",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Jest environment for collecting test evidence.",
   "repository": {
     "type": "git",
