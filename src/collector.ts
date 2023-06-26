@@ -43,13 +43,10 @@ export class Collector {
       : tc.evidence
       
     for (const ev of iterator) {
-      /* eslint-disable  @typescript-eslint/no-unused-vars */
-      
       let fileContent: any
       let fileName!: string
       const microTime = getMicroTime()
       if (ev.type === EvidenceTypeEnum.IMAGE) {
-        console.log(ev instanceof Evidence, ev instanceof EvidenceError)
         if(ev instanceof Evidence) {
           fileContent = this.convertContentToImg(
             title,
