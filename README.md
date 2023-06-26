@@ -36,22 +36,22 @@ Here we have a couple of tests
 ```
 describe("sum", () => {
   it("#DCT-T45667 can add two numbers together", async function() {
-    collectEvidence("result date from calling service", {a: "b"})
+    collectAsImage("result date from calling service", {a: "b"})
     const a = 'b'
-    collectEvidence("value transformed", a)
+    collectAsImage("value transformed", a)
     expect(1+1).toBe(2);
     
   });
 
   it("can add two numbers DCT-T488,DCT-T188 together", async function() {
-    collectEvidence("result date from calling service",{a: "c"}) // apply to both TC
+    collectAsImage("result date from calling service",{a: "c"}) // apply to both TC
     expect(1+1).toBe(2);
-    collectEvidence("everything ok", {success: true}, "DCT-T188") // this will be collected only for that TC
+    collectAsImage("everything ok", {success: true}, "DCT-T188") // this will be collected only for that TC
     
   });
 
   it("#DCT-T489 can add two numbers together", async function() {
-    collectEvidence("result date from calling service",{a: "d"})
+    collectAsImage("result date from calling service",{a: "d"})
     expect(1+1).toBe(1);
     
   });
@@ -59,10 +59,16 @@ describe("sum", () => {
 
 ```
 
-collectEvidence exists globaly so you can add there and it will collect all evidence related with the context you have.
-its signature is the following:
+therea are some functions that exists globaly so you can use inside tests and it will collect all evidence related with the context you have.
+the signatures are the following:
 ```
-collectEvidence(description: string, data: any, identifier?:string) : void
+collectAsImage(description: string, data: any, identifier?:string) : void
+collectAsText(description: string, data: any, identifier?:string) : void
+collectError(err: Error, identifier?:string) : void
+```
+Note: if you are using typescript add the following header to access the types
+```
+/// <reference types="@medable/jest-evidence-collector-environment" />
 ```
 
 ### Run Tests

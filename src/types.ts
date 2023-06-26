@@ -1,6 +1,6 @@
 export enum EvidenceTypeEnum {
-  IMAGE = "jsonImage",
-  TEXT = "text"
+  IMAGE = 'jsonImage',
+  TEXT = 'text',
 }
 
 export interface IBaseEvidence {
@@ -9,7 +9,6 @@ export interface IBaseEvidence {
   resource?: string
   type?: EvidenceTypeEnum
 }
-
 
 export class Evidence implements IBaseEvidence {
   identifier: string
@@ -29,20 +28,19 @@ export class EvidenceError implements IBaseEvidence {
   collectedAt?: number | undefined
   resource?: string | undefined
   type?: EvidenceTypeEnum | undefined
-  message:string
-  stack:string
+  message: string
+  stack: string
 
   constructor(options: Partial<EvidenceError>) {
     Object.assign(this, options)
   }
 }
 
-
 export type EnvOptions = {
   enabled: boolean
   project: string
   header: string
-  regex?: string,
+  regex?: string
   output: {
     folder: string
     file: string
@@ -50,7 +48,7 @@ export type EnvOptions = {
 }
 
 export type TestCase = {
-  evidence: Array<Evidence|EvidenceError>
+  evidence: Array<Evidence | EvidenceError>
   multipleIdentifiers?: boolean
   identifier: string
   started: Date
@@ -64,7 +62,12 @@ export type OutputResult = {
     id_list: string
     status: 'Passed' | 'Failed'
     duration: number
-    date: Date,
-    evidence: Array<Evidence|EvidenceError>
+    date: Date
+    evidence: Array<Evidence | EvidenceError>
   }[]
+}
+declare global {
+  function collectAsText(...args: any): void
+  function collectAsImage(...args: any): void
+  function collectError(...args: any): void
 }

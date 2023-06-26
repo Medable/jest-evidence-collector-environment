@@ -32,9 +32,12 @@ export class CustomEnvironment extends NodeEnvironment {
       ...testEnvironmentOptions,
     } as EnvOptions
     this.collector = Collector.getInstance(options)
-    this.global.collectAsText = this.collectAsText.bind(this)
-    this.global.collectAsImage = this.collectAsImage.bind(this)
-    this.global.collectError = this.collectError.bind(this)
+    const collectAsImage = this.collectAsImage.bind(this)
+    const collectAsText = this.collectAsText.bind(this)
+    const collectError = this.collectError.bind(this)
+    this.global.collectAsText = collectAsText
+    this.global.collectAsImage = collectAsImage
+    this.global.collectError =collectError
     
   }
 
