@@ -88,7 +88,7 @@ describe('Collector', () => {
       const name = 'ABC-TestCase1'
       const testCase = collector.extractTestCase(name)
       expect(testCase?.length).toBe(1)
-      expect(testCase?.at(0)).toBe('ABC-TestCase1')
+      expect(testCase ? testCase[0] : null).toBe('ABC-TestCase1')
     })
 
     it('should return null when project or name are missing', () => {
@@ -104,7 +104,7 @@ describe('Collector', () => {
       const name = 'This is the TT-ABC123 cycle test'
       const testCase = collector.extractTestCase(name)
       expect(testCase?.length).toBe(1)
-      expect(testCase?.at(0)).toBe('TT-ABC123')
+      expect(testCase ? testCase[0] : null).toBe('TT-ABC123')
     })
 
     it('should should get multiple test cases y multiple matches', () => {
