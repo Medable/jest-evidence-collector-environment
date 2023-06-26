@@ -1,7 +1,11 @@
 {
-  "name": "jest-evidence-collector-environment",
+  "name": "@medable/jest-evidence-collector-environment",
   "version": "1.0.0",
-  "description": "",
+  "description": "A Jest environment for collecting test evidence.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Medable/jest-evidence-collector-environment"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -11,9 +15,10 @@
     "build": "rimraf ./dist && tsc",
     "lint": "npx eslint src --ext ts,js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "files": ["dist/**/*"],
+  "keywords": ["jest", "evidence", "testing"],
+  "author": "Gaston Robledo @ Medable Inc",
+  "license": "MIT",
   "dependencies": {
     "@jest/environment": "^29.5.0",
     "@jest/types": "^29.5.0",
