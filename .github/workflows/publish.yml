@@ -15,6 +15,6 @@ jobs:
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm config set registry.npmjs.org/:_authToken=${NODE_NPM_TOKEN}
+      - run: npm config set //registry.npmjs.org/:_authToken=${NODE_NPM_TOKEN}
       - run: npm install
       - run: npm publish --access public
