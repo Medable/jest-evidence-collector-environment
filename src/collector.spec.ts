@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { Collector } from './collector'
-import { EnvOptions, TestCase, Evidence, OutputResult } from './types'
+import { EnvOptions, TestCase, Evidence, OutputResult, EvidenceTypeEnum } from './types'
 import { getMicroTime } from './utils'
 
 describe('Collector', () => {
@@ -87,7 +87,8 @@ describe('Collector', () => {
       collector = Collector.getInstance(options)
       const name = 'ABC-TestCase1'
       const testCase = collector.extractTestCase(name)
-      expect(testCase).toBe('ABC-TestCase1')
+      expect(testCase?.length).toBe(1)
+      expect(testCase?.at(0)).toBe('ABC-TestCase1')
     })
 
     it('should return null when project or name are missing', () => {
@@ -96,6 +97,21 @@ describe('Collector', () => {
       const testCase2 = collector.extractTestCase('TestCase1')
       expect(testCase1).toBeNull()
       expect(testCase2).toBeNull()
+    })
+
+    it('should use custom regex when passed', () => {
+      collector = Collector.getInstance({...options, regex: 'TT-\\S+' })
+      const name = 'This is the TT-ABC123 cycle test'
+      const testCase = collector.extractTestCase(name)
+      expect(testCase?.length).toBe(1)
+      expect(testCase?.at(0)).toBe('TT-ABC123')
+    })
+
+    it('should should get multiple test cases y multiple matches', () => {
+      collector = Collector.getInstance({...options, regex: 'TT-[A-Za-z]+\\S+' })
+      const name = 'This is the TT-ABC123, TT-ABC124, TT-ABC523 cycle test'
+      const testCase = collector.extractTestCase(name)
+      expect(testCase).toStrictEqual(["TT-ABC123", "TT-ABC124", "TT-ABC523"])
     })
   })
 
@@ -150,6 +166,7 @@ describe('Collector', () => {
         description: 'Evidence 1',
         collectedAt: getMicroTime(),
         data: { foo: 'bar' },
+        type: EvidenceTypeEnum.IMAGE
       }
       collector.addEvidence(test, evidence)
 
@@ -189,7 +206,7 @@ describe('Collector', () => {
     it('should write the final output file if enabled and evidence exists', () => {
       collector = Collector.getInstance(options)
       const fileContent: OutputResult = {
-        title: 'Test Title',
+        test_run_name: 'Test Title',
         tests: [],
       }
       const readFileSpy = jest

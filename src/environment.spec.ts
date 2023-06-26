@@ -1,15 +1,15 @@
 import { Circus } from '@jest/types';
-import CustomEnvironment from './environment';
+import {CustomEnvironment} from './environment';
 import { Collector } from './collector';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getMicroTime } from './utils';
 import { EnvironmentContext, JestEnvironmentConfig } from '@jest/environment';
-import { TestCase } from './types';
+import { EvidenceError, EvidenceTypeEnum } from './types';
 
 jest.mock('./collector');
 jest.mock('./utils');
 
-describe('CustomEnvironment', () => {
+describe('customEnvironment', () => {
   let customEnvironment: CustomEnvironment;
   let mockCollector: Collector;
   let mockGetMicroTime: jest.Mock;
@@ -26,7 +26,7 @@ describe('CustomEnvironment', () => {
       endCollecting: jest.fn(),
     } as unknown as Collector;
 
-    mockGetMicroTime = jest.fn().mockReturnValue('2023-06-23T12:00:00.000Z');
+    mockGetMicroTime = jest.fn().mockReturnValue(123456789.823);
     (getMicroTime as jest.Mock) = mockGetMicroTime;
 
     (Collector.getInstance as jest.Mock) = jest.fn().mockReturnValue(mockCollector);
@@ -35,21 +35,21 @@ describe('CustomEnvironment', () => {
       projectConfig: {
         testEnvironmentOptions: {
           enabled: true,
-          outputEvidence: {
+          output: {
             folder: './evidence',
             file: 'results.json',
           },
         },
       },
-    };
+    } as any as JestEnvironmentConfig;
     const context = {
       docblockPragmas: {
         pragma1: 'value1',
         pragma2: ['value2', 'value3'],
       },
       testPath: '/path/to/test',
-    };
-    customEnvironment = new CustomEnvironment(config as unknown as JestEnvironmentConfig, context as unknown as EnvironmentContext);
+    } as any as EnvironmentContext;
+    customEnvironment = new CustomEnvironment(config, context);
   });
 
   afterEach(() => {
@@ -57,14 +57,14 @@ describe('CustomEnvironment', () => {
   });
 
   describe('constructor', () => {
-    it('should create an instance of CustomEnvironment', () => {
+    it('should create an instance of customEnvironment', () => {
       expect(customEnvironment).toBeInstanceOf(CustomEnvironment);
     });
 
     it('should initialize the collector with the correct options', () => {
       const expectedOptions = {
         enabled: true,
-        outputEvidence: {
+        output: {
           folder: './evidence',
           file: 'results.json',
         },
@@ -72,43 +72,124 @@ describe('CustomEnvironment', () => {
       expect(Collector.getInstance).toHaveBeenCalledWith(expectedOptions);
     });
 
-    it('should set the collectEvidence function in the global object', () => {
-      expect(customEnvironment.global.collectEvidence).toBeDefined();
+    it('should set the collectAsImage function in the global object', () => {
+      expect(customEnvironment.global.collectAsImage).toBeDefined();
+    });
+    it('should set the collectAsText function in the global object', () => {
+      expect(customEnvironment.global.collectAsText).toBeDefined();
+    });
+    it('should set the collectError function in the global object', () => {
+      expect(customEnvironment.global.collectError).toBeDefined();
     });
   });
 
-  describe('collectEvidence', () => {
-    it('should add evidence to the collector for the current test case', () => {
-      const mockAddEvidence = jest.spyOn(mockCollector, 'addEvidence');
-      jest.spyOn(mockCollector, 'getTestCase').mockReturnValue({identifier: 'ABC-TestCase1'} as TestCase)
-      customEnvironment.testId = 'ABC-TestCase1';
+  describe('collectAsText', () => {
+    it('should add text evidence to the collector', () => {
+      const tc = { id: 'testId' }
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(tc)
+      customEnvironment.collector.addEvidence = jest.fn()
 
-      customEnvironment.collectEvidence('Evidence description', { foo: 'bar' }, customEnvironment.testId);
+      const description = 'Test description'
+      const data = 'Test data'
+      const identifier = 'Test identifier'
+      customEnvironment.collectAsText(description, data, identifier)
 
-      expect(mockAddEvidence).toHaveBeenCalledWith(
-        expect.objectContaining({ identifier: 'ABC-TestCase1' }),
-        expect.objectContaining({
-          description: 'Evidence description',
-          data: { foo: 'bar' },
-          identifier: 'ABC-TestCase1',
-        })
-      );
-    });
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+        description,
+        data,
+        collectedAt: expect.any(Number),
+        type: EvidenceTypeEnum.TEXT,
+        identifier,
+      })
+    })
 
-    it('should not add evidence if the current test case does not exist', () => {
-      const mockAddEvidence = jest.spyOn(mockCollector, 'addEvidence');
-      customEnvironment.testId = '';
+    it('should not add evidence if test case is not found', () => {
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(undefined)
+      customEnvironment.collector.addEvidence = jest.fn()
 
-      customEnvironment.collectEvidence('Evidence description', { foo: 'bar' }, 'identifier');
+      const description = 'Test description'
+      const data = 'Test data'
+      const identifier = 'Test identifier'
+      customEnvironment.collectAsText(description, data, identifier)
 
-      expect(mockAddEvidence).not.toHaveBeenCalled();
-    });
-  });
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('collectAsImage', () => {
+    it('should add image evidence to the collector', () => {
+      const tc = { id: 'testId' }
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(tc)
+      customEnvironment.collector.addEvidence = jest.fn()
+
+      const description = 'Test description'
+      const data = 'Test data'
+      const identifier = 'Test identifier'
+      customEnvironment.collectAsImage(description, data, identifier)
+
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+        description,
+        data,
+        collectedAt: expect.any(Number),
+        type: EvidenceTypeEnum.IMAGE,
+        identifier,
+      })
+    })
+
+    it('should not add evidence if test case is not found', () => {
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(undefined)
+      customEnvironment.collector.addEvidence = jest.fn()
+
+      const description = 'Test description'
+      const data = 'Test data'
+      const identifier = 'Test identifier'
+      customEnvironment.collectAsImage(description, data, identifier)
+
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('collectError', () => {
+    it('should add error evidence to the collector', () => {
+      const tc = { id: 'testId' }
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(tc)
+      customEnvironment.collector.addEvidence = jest.fn()
+
+      const error = new Error('Test error')
+      const identifier = 'Test identifier'
+      customEnvironment.collectError(error, EvidenceTypeEnum.TEXT, identifier)
+
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+        message: error.message,
+        stack: error.stack,
+        collectedAt: expect.any(Number),
+        identifier,
+        type: EvidenceTypeEnum.TEXT
+      } as EvidenceError)
+    })
+
+    it('should not add evidence if test case is not found', () => {
+      customEnvironment.collector.getTestCase = jest.fn().mockReturnValue(undefined)
+      customEnvironment.collector.addEvidence = jest.fn()
+
+      const error = new Error('Test error')
+      const identifier = 'Test identifier'
+      customEnvironment.collectError(error, EvidenceTypeEnum.TEXT, identifier)
+
+      expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
+      expect(customEnvironment.collector.addEvidence).not.toHaveBeenCalled()
+    })
+  })
 
   describe('startTest', () => {
     it('should add a new test case to the collector', () => {
       const mockAddTestCase = jest.spyOn(mockCollector, 'addTestCase');
-      jest.spyOn(mockCollector, 'extractTestCase').mockReturnValue('myProject.TestCase1')
+      jest.spyOn(mockCollector, 'extractTestCase').mockReturnValue(['myProject.TestCase1'])
       const state = {
         currentlyRunningTest: {
           name: 'myProject.TestCase1',
@@ -146,7 +227,7 @@ describe('CustomEnvironment', () => {
 
   describe('endTest', () => {
     it('should add error evidence if there are errors in the test', () => {
-      const mockCollectEvidence = jest.spyOn(customEnvironment, 'collectEvidence');
+      const mockCollectError = jest.spyOn(customEnvironment, 'collectError');
       const state = {
         currentlyRunningTest: {
           errors: ['Error 1', 'Error 2'],
@@ -154,10 +235,10 @@ describe('CustomEnvironment', () => {
       } as unknown as Circus.State;
 
       customEnvironment.endTest(state, false);
-
-      expect(mockCollectEvidence).toHaveBeenCalledWith(
-        'Error executing test',
-        ['Error 1', 'Error 2'],
+      const error = new Error('Error executing test')
+      error.stack = JSON.stringify(state.currentlyRunningTest?.errors, null, 2)
+      expect(mockCollectError).toHaveBeenCalledWith(error,
+        EvidenceTypeEnum.IMAGE,
         customEnvironment.testId
       );
     });

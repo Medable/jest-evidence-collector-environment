@@ -1,23 +1,48 @@
 export enum EvidenceTypeEnum {
-  IMAGE = "Image",
-  TEXT = "Text",
-  ZIP = "Zip"
+  IMAGE = "jsonImage",
+  TEXT = "text"
 }
 
-export type Evidence = {
+export interface IBaseEvidence {
   identifier: string
-  description: string
   collectedAt?: number
-  data?: any
   resource?: string
   type?: EvidenceTypeEnum
 }
+
+
+export class Evidence implements IBaseEvidence {
+  identifier: string
+  collectedAt?: number | undefined
+  resource?: string | undefined
+  type?: EvidenceTypeEnum | undefined
+  description: string
+  data?: any
+
+  constructor(options: Partial<Evidence>) {
+    Object.assign(this, options)
+  }
+}
+
+export class EvidenceError implements IBaseEvidence {
+  identifier: string
+  collectedAt?: number | undefined
+  resource?: string | undefined
+  type?: EvidenceTypeEnum | undefined
+  message:string
+  stack:string
+
+  constructor(options: Partial<EvidenceError>) {
+    Object.assign(this, options)
+  }
+}
+
 
 export type EnvOptions = {
   enabled: boolean
   project: string
   header: string
-  defaultType?: EvidenceTypeEnum
+  regex?: string,
   output: {
     folder: string
     file: string
@@ -25,18 +50,21 @@ export type EnvOptions = {
 }
 
 export type TestCase = {
-  evidence: Evidence[]
+  evidence: Array<Evidence|EvidenceError>
   multipleIdentifiers?: boolean
   identifier: string
   started: Date
+  duration?: number
   status: 'Passed' | 'Failed'
 }
 
 export type OutputResult = {
-  title: string
+  test_run_name: string
   tests: {
-    id: string,
-    status: 'Passed' | 'Failed',
-    evidence: Evidence[]
+    id_list: string
+    status: 'Passed' | 'Failed'
+    duration: number
+    date: Date,
+    evidence: Array<Evidence|EvidenceError>
   }[]
 }

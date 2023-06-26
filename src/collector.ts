@@ -2,7 +2,14 @@ import fs from 'fs'
 import path from 'path'
 import { inspect } from 'util'
 import { UltimateTextToImage, VerticalImage } from 'ultimate-text-to-image'
-import { EnvOptions, Evidence, OutputResult, TestCase } from './types'
+import {
+  EnvOptions,
+  Evidence,
+  EvidenceError,
+  EvidenceTypeEnum,
+  OutputResult,
+  TestCase,
+} from './types'
 import { getMicroTime } from './utils'
 import * as uuid from 'uuid'
 /**
@@ -25,56 +32,51 @@ export class Collector {
     }
   }
 
-  private createEvidenceFiles(
+  private parseEvidence(
     title: string,
     tc: TestCase,
     identifier?: string,
   ) {
-    const evidence = []
+    const evidences = []
     const iterator = identifier
       ? tc.evidence.filter((e) => e.identifier && e.identifier === identifier)
       : tc.evidence
+      
     for (const ev of iterator) {
-      let fileContent!: string | Buffer;
-      let fileName!: string;
+      /* eslint-disable  @typescript-eslint/no-unused-vars */
+      
+      let fileContent: any
+      let fileName!: string
       const microTime = getMicroTime()
-      switch(ev.type) {
-        case 'Text':
-          fileContent = JSON.stringify(ev.data, null, 2)
-          fileName = `${identifier || tc.identifier}-dataText-${microTime}.txt`
-          break;
-        case 'Zip':
-          fileContent = Buffer.from(ev.data)
-          fileName =`${identifier || tc.identifier}-dataZip-${microTime}.zip`
-          break;
-        case 'Image':
-        default:
-          fileContent =  this.convertContentToImg(
+      if (ev.type === EvidenceTypeEnum.IMAGE) {
+        console.log(ev instanceof Evidence, ev instanceof EvidenceError)
+        if(ev instanceof Evidence) {
+          fileContent = this.convertContentToImg(
             title,
             ev.data,
-            tc.status === 'Failed',
+            false
           )
-          fileContent = Buffer.from(fileContent.replace('data:image/png;base64,', ''), 'base64')
-          fileName = `${identifier || tc.identifier}-dataImage-${microTime}.png`
-          break
+          delete ev.data
+        } else {
+          fileContent = this.convertContentToImg(
+            title,
+            ev.stack,
+            true
+          )
+        }
+        fileContent = Buffer.from(
+          fileContent.replace('data:image/png;base64,', ''),
+          'base64',
+        )
+        fileName = `${identifier || tc.identifier}-dataImage-${microTime}.png`
+        const ouputFilePath = path.join(this.options.output.folder, fileName)
+        fs.writeFileSync(ouputFilePath, fileContent, 'utf-8')
+        ev.resource = ouputFilePath
       }
-      
-      const ouputFilePath = path.join(
-        this.options.output.folder,
-        fileName,
-      )
-      fs.writeFileSync(
-        ouputFilePath,
-        fileContent
-      )
-      /* eslint-disable  @typescript-eslint/no-unused-vars */
-      const { data, ...rest } = ev
-      evidence.push({
-        ...rest,
-        resource: ouputFilePath,
-      })
+
+      evidences.push(ev)
     }
-    return evidence
+    return evidences
   }
 
   private createOutputFile() {
@@ -87,7 +89,7 @@ export class Collector {
     )
     if (!fs.existsSync(ouputFilePath)) {
       const fileContent: OutputResult = {
-        title: `${
+        test_run_name: `${
           this.options.header
         } Test Run: ${new Date().toISOString()}`.trim(),
         tests: [],
@@ -113,7 +115,7 @@ export class Collector {
     content: string,
     isError?: boolean,
   ): string {
-    const dataStr = inspect(content)
+    const dataStr = !(typeof content === 'string') ? inspect(content) : content
     const titleImage = new UltimateTextToImage(`Test Cycle: ${header}`, {
       fontSize: 26,
       fontColor: isError ? '#FF0000' : '#000000',
@@ -157,10 +159,11 @@ export class Collector {
     return Collector.instance
   }
 
-  public extractTestCase(name: string | undefined): string | null {
+  public extractTestCase(name: string | undefined): string[] | null {
     if (this.options.project && name) {
-      const pattern = `${this.options.project}\\S+`
-      return name.match(new RegExp(pattern, 'ig'))?.[0] || null
+      const pattern = this.options.regex || `${this.options.project}\\S+`
+      const matches = name.match(new RegExp(pattern, 'ig'))?.map(a => a.toString().split(',')).flat(2)
+      return matches?.filter(m => m) || null
     }
     return null
   }
@@ -176,34 +179,29 @@ export class Collector {
     return this.allEvidence.get(identifier)
   }
 
-  public addEvidence(tc: TestCase, evidence: Evidence) {
+
+
+  public addEvidence(tc: TestCase, evidence: Evidence | EvidenceError) {
     if (this.options.enabled) {
-      const { description, collectedAt, data, identifier, type: evType } = evidence
-      const type = evType || this.options.defaultType
+      const { identifier } = evidence
       if (tc.multipleIdentifiers && !identifier) {
         const parts = tc.identifier.split(',')
         const items = parts.map((p) => {
-          return {
-            identifier: p,
-            description,
-            collectedAt,
-            type,
-            data,
+          const item = {
+            ...evidence,
+            identifier: p
           }
+          return item
         })
-        tc.evidence = [...tc.evidence, ...items]
+        tc.evidence  = [...tc.evidence, ...items]
       } else {
-        tc.evidence.push({
-          identifier: identifier || tc.identifier,
-          description,
-          collectedAt,
-          type,
-          data,
-        })
+        evidence.identifier = identifier || tc.identifier,
+        tc.evidence.push(evidence)
       }
       this.allEvidence.set(tc.identifier, tc)
     }
   }
+
 
   public updateTestStatus(identifier: string, status: 'Passed' | 'Failed') {
     const tc = this.getTestCase(identifier)
@@ -211,6 +209,9 @@ export class Collector {
       return console.warn('Missing test case!')
     }
     tc.status = status
+    tc.duration = Math.abs(
+      new Date().getTime() - new Date(tc.started).getTime(),
+    )
     this.allEvidence.set(identifier, tc)
   }
 
@@ -228,23 +229,30 @@ export class Collector {
         const moreThanOneIdentifier = tcId.split(',')
         if (moreThanOneIdentifier.length > 1) {
           for (const id of moreThanOneIdentifier) {
-            const evidence = this.createEvidenceFiles(
-              fileContent.title,
+            const evidence = this.parseEvidence(
+              fileContent.test_run_name,
               entry,
               id,
             )
             fileContent.tests.push({
-              id,
+              id_list: id,
               status: entry.status,
+              date: entry.started,
+              duration: entry.duration || 0,
               evidence,
             })
           }
         } else {
-          const evidence = this.createEvidenceFiles(fileContent.title, entry)
+          const evidence = this.parseEvidence(
+            fileContent.test_run_name,
+            entry,
+          )
 
           fileContent.tests.push({
-            id: tcId,
+            id_list: tcId,
             status: entry.status,
+            date: entry.started,
+            duration: entry.duration || 0,
             evidence,
           })
         }

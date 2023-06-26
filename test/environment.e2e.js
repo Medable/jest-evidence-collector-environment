@@ -6,8 +6,8 @@ describe('Testing end to end environment implementation', () => {
   let testResult
   const projectPath = path.join(__dirname, 'e2e')
   const options = {
-    silent: true,
-    verbose: false,
+    silent: false,
+    verbose: true,
     reporters: ['jest-silent-reporter'],
     config: path.join(__dirname, 'e2e', 'jest.config.js'),
   }
@@ -32,14 +32,14 @@ describe('Testing end to end environment implementation', () => {
 
   it('should have generated the proper evidence', async () => {
     const results = JSON.parse(fs.readFileSync(path.join(__dirname, 'e2e/evidence/results.json'), { encoding: 'utf-8' }))
-    expect(results.title).toContain('My Header Test Run')
+    expect(results.test_run_name).toContain('My Header Test Run')
     expect(results.tests.length).toBe(5)
-    const ids = new Set(results.tests.map(t => t.id))
+    const ids = new Set(results.tests.map(t => t.id_list))
     expect(ids.size).toBe(5)
-    const images = results.tests.map(t => t.evidence.map(e => e.image)).flat(2)
-    expect(images.length).toBe(8)
-    for(const img of images) {
-      expect(fs.existsSync(img)).toBeTruthy()
+    const resources = results.tests.map(t => t.evidence.filter(e => e.type === 'jsonImage').map(e => e.resource)).flat(2)
+    expect(resources.length).toBe(5)
+    for(const res of resources) {
+      expect(fs.existsSync(res)).toBeTruthy()
     }
   })
 })

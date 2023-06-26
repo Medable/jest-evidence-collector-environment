@@ -2,12 +2,12 @@
 import NodeEnvironment from 'jest-environment-node'
 import type { Circus } from '@jest/types'
 import { JestEnvironmentConfig, EnvironmentContext } from '@jest/environment'
-import { EnvOptions, Evidence, EvidenceTypeEnum, TestCase } from './types'
+import { EnvOptions, Evidence, EvidenceError, EvidenceTypeEnum, TestCase } from './types'
 import { Collector } from './collector'
 import { getMicroTime } from './utils'
 
 
-export default class CustomEnvironment extends NodeEnvironment {
+export class CustomEnvironment extends NodeEnvironment {
   testPath?: string
   docblockPragmas?: Record<string, string | string[]>
   collector: Collector
@@ -24,7 +24,6 @@ export default class CustomEnvironment extends NodeEnvironment {
     const options = {
       ...{
         enabled: true,
-        defaultType: EvidenceTypeEnum.IMAGE,
         output: {
           folder: './evidence',
           file: 'results.json',
@@ -33,44 +32,64 @@ export default class CustomEnvironment extends NodeEnvironment {
       ...testEnvironmentOptions,
     } as EnvOptions
     this.collector = Collector.getInstance(options)
-    this.global.collectEvidence = this.collectEvidence.bind(this)
+    this.global.collectAsText = this.collectAsText.bind(this)
+    this.global.collectAsImage = this.collectAsImage.bind(this)
+    this.global.collectError = this.collectError.bind(this)
     
   }
 
-  collectEvidence(description: string, data: string | Buffer | string[] | object, identifier?:string): void;
-  collectEvidence(description: string, data: string | Buffer | string[] | object, type?: EvidenceTypeEnum, identifier?:string): void {
+  collectAsText(description: string, data: any, identifier?:string): void {
     const tc = this.collector.getTestCase(this.testId)
     if(tc) {
       const collectedAt = getMicroTime()
-      this.collector.addEvidence(tc, { description, data, collectedAt, type, identifier } as Evidence)
+      const evidence = new Evidence({ description, data, collectedAt, type: EvidenceTypeEnum.TEXT, identifier } )
+      this.collector.addEvidence(tc, evidence)
+    }
+  }
+  collectAsImage(description: string, data: any, identifier?:string): void {
+    const tc = this.collector.getTestCase(this.testId)
+    if(tc) {
+      const collectedAt = getMicroTime()
+      const evidence = new Evidence({ description, data, collectedAt, type: EvidenceTypeEnum.IMAGE, identifier })
+      this.collector.addEvidence(tc, evidence)
+    }
+  }
+  collectError(error: Error, type: EvidenceTypeEnum = EvidenceTypeEnum.TEXT, identifier?: string) {
+    const tc = this.collector.getTestCase(this.testId)
+    if(tc) {
+      const collectedAt = getMicroTime()
+      const evidenceError = new EvidenceError({ message: error.message, stack: error.stack, collectedAt, type, identifier })
+      this.collector.addEvidence(tc, evidenceError)
     }
   }
 
   startTest(state: Circus.State) {
     const name = this.collector.extractTestCase(state.currentlyRunningTest?.name) || ''
-    if (!name) {
+    if (!name || name.length < 1) {
       return console.warn(
         `Test: ${state.currentlyRunningTest?.name} will be ignored for evidence collection missing test case name.`,
       )
     }
    
-    const hasMultiple = name.split(',').length > 1
+    const hasMultiple = name.length > 1
     const tc = {
       multipleIdentifiers: hasMultiple,
-      identifier: name,
+      identifier: name.join(','),
       started: new Date(
         (state.currentlyRunningTest?.startedAt as unknown) as number,
       ),
     } as TestCase
    
-    this.testId = name
+    this.testId = name.join(',')
     this.collector.addTestCase(tc)
   }
 
   endTest(state: Circus.State, success: boolean) {
     const status = success ? 'Passed' : 'Failed'
     if (state.currentlyRunningTest?.errors?.length) {
-      this.collectEvidence('Error executing test', state.currentlyRunningTest.errors, this.testId)
+      const err = new Error('Error executing test')
+      err.stack = JSON.stringify(state.currentlyRunningTest.errors, null, 2)
+      this.collectError(err, EvidenceTypeEnum.IMAGE, this.testId)
     }
     this.collector.updateTestStatus(this.testId, status)
     
