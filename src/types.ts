@@ -67,7 +67,7 @@ export type OutputResult = {
   }[]
 }
 declare global {
-  function collectAsText(...args: any): void
-  function collectAsImage(...args: any): void
-  function collectError(...args: any): void
+  function collectAsText(description: string, data: any, identifier?:string): void
+  function collectAsImage(description: string, data: any, identifier?:string): void
+  function collectError(error: Error, type: EvidenceTypeEnum, identifier?: string): void
 }
