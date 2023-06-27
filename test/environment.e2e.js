@@ -25,19 +25,19 @@ describe('Testing end to end environment implementation', () => {
       numTotalTests,
     } = testResult.results
     expect(numFailedTests).toBe(1)
-    expect(numPassedTests).toBe(3)
+    expect(numPassedTests).toBe(5)
     expect(numTotalTestSuites).toBe(2)
-    expect(numTotalTests).toBe(4)
+    expect(numTotalTests).toBe(6)
   })
 
   it('should have generated the proper evidence', async () => {
     const results = JSON.parse(fs.readFileSync(path.join(__dirname, 'e2e/evidence/results.json'), { encoding: 'utf-8' }))
     expect(results.test_run_name).toContain('My Header Test Run')
-    expect(results.tests.length).toBe(5)
+    expect(results.tests.length).toBe(8)
     const ids = new Set(results.tests.map(t => t.id_list))
-    expect(ids.size).toBe(5)
+    expect(ids.size).toBe(7)
     const resources = results.tests.map(t => t.evidence.filter(e => e.type === 'jsonImage').map(e => e.resource)).flat(2)
-    expect(resources.length).toBe(7)
+    expect(resources.length).toBe(10)
     for(const res of resources) {
       expect(fs.existsSync(res)).toBeTruthy()
     }

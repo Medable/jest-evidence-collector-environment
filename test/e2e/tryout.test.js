@@ -18,4 +18,30 @@ describe("sum", () => {
     expect(1+1).toBe(1);
     
   });
+
+  it('collect evidence for ABC-T147', () => {
+    collectAsImage('this is an image', {
+      "result": {
+        text: "This is a json result collected",
+        number: 1234,
+        date: new Date().toISOString()
+      }
+    })
+    expect(1+1).toBe(2)
+    collectAsText('this is an evidence collected as text', "Text data")
+    // collect error as well
+    collectError(new Error('This is an error'), 'text')
+  });
+
+  it('collect evidence for multiple tests ABC-T147, ABC-T148', () => {
+    collectAsImage('this is an image', {
+      "result": {
+        text: "lorem impsum at dole",
+        number: 1234,
+        date: new Date().toISOString()
+      }
+    })
+    expect(1+1).toBe(2)
+    collectAsText('this is an evidence collected as text', "this data is only for ABC-T148", 'ABC-T148')
+  });
 });

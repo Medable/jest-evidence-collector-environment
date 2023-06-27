@@ -188,7 +188,7 @@ export class Collector {
             ...evidence,
             identifier: p
           }
-          return item
+          return evidence instanceof Evidence ? new Evidence(item) : new EvidenceError(item)
         })
         tc.evidence  = [...tc.evidence, ...items]
       } else {
