@@ -32,47 +32,30 @@ export class Collector {
     }
   }
 
-  private parseEvidence(
-    title: string,
-    tc: TestCase,
-    identifier?: string,
-  ) {
+  private parseEvidence(title: string, tc: TestCase, identifier?: string) {
     const evidences = []
     const iterator = identifier
       ? tc.evidence.filter((e) => e.identifier && e.identifier === identifier)
       : tc.evidence
-      
+
     for (const ev of iterator) {
-      let fileContent: any
       let fileName!: string
       const microTime = getMicroTime()
       if (ev.type === EvidenceTypeEnum.IMAGE) {
-        if(ev instanceof Evidence) {
-          try {
-            fileContent = this.convertContentToImg(
-              title,
-              ev.data,
-              false
-            )
-            delete ev.data
-          } catch(ex) {
-            console.log(ex)
-          }
-        } else {
-          fileContent = this.convertContentToImg(
-            title,
-            ev.stack,
-            true
-          )
-        }
-        fileContent = Buffer.from(
-          fileContent.replace('data:image/png;base64,', ''),
-          'base64',
-        )
         fileName = `${identifier || tc.identifier}-dataImage-${microTime}.png`
         const ouputFilePath = path.join(this.options.output.folder, fileName)
-        fs.writeFileSync(ouputFilePath, fileContent, 'utf-8')
-        ev.resource = ouputFilePath
+        try {
+          if (ev instanceof Evidence) {
+            this.convertContentToImg(title, ev.data, false, ouputFilePath)
+            delete ev.data
+          } else {
+            this.convertContentToImg(title, ev.stack, true, ouputFilePath)
+          }
+        } catch (ex) {
+          console.log(ex)
+        } finally {
+          ev.resource = ouputFilePath
+        }
       }
 
       evidences.push(ev)
@@ -114,35 +97,35 @@ export class Collector {
   private convertContentToImg(
     header: string,
     content: string,
-    isError?: boolean,
-  ): string {
+    isError: boolean = false,
+    ouputFilePath: string,
+  ): void {
     const dataStr = !(typeof content === 'string') ? inspect(content) : content
     const titleImage = new UltimateTextToImage(`Test Cycle: ${header}`, {
-      fontSize: 26,
-      fontFamily: 'Monospace',
+      fontSize: 18,
       fontColor: isError ? '#FF0000' : '#000000',
       fontWeight: 700,
       width: 900,
       marginBottom: 20,
-      maxHeight: 80
+      maxHeight: 80,
     })
     const dataImage = new UltimateTextToImage(dataStr, {
-      fontSize: 14,
+      fontSize: 12,
+      fontFamily: 'monospace',
       fontColor: isError ? '#FF0000' : '#000000',
       width: 900,
-      fontFamily: 'Monospace',
       borderSize: 1,
       borderColor: '#000000',
       backgroundColor: '#F0F0F0',
       margin: 10,
-      maxHeight: 2048,
+      maxHeight: 1024,
     })
-    return new VerticalImage([titleImage, dataImage], {
+    new VerticalImage([titleImage, dataImage], {
       backgroundColor: '#FFFFFF',
       margin: 20,
     })
       .render()
-      .toDataUrl('image/png')
+      .toFile(ouputFilePath, 'image/png', { compressionLevel: 9 })
   }
 
   private static alreadyCreated(): boolean {
@@ -166,8 +149,11 @@ export class Collector {
   public extractTestCase(name: string | undefined): string[] | null {
     if (this.options.project && name) {
       const pattern = this.options.regex || `${this.options.project}\\S+`
-      const matches = name.match(new RegExp(pattern, 'ig'))?.map(a => a.toString().split(',')).flat(2)
-      return matches?.filter(m => m) || null
+      const matches = name
+        .match(new RegExp(pattern, 'ig'))
+        ?.map((a) => a.toString().split(','))
+        .flat(2)
+      return matches?.filter((m) => m) || null
     }
     return null
   }
@@ -183,8 +169,6 @@ export class Collector {
     return this.allEvidence.get(identifier)
   }
 
-
-
   public addEvidence(tc: TestCase, evidence: Evidence | EvidenceError) {
     if (this.options.enabled) {
       const { identifier } = evidence
@@ -193,19 +177,20 @@ export class Collector {
         const items = parts.map((p) => {
           const item = {
             ...evidence,
-            identifier: p
+            identifier: p,
           }
-          return evidence instanceof Evidence ? new Evidence(item) : new EvidenceError(item)
+          return evidence instanceof Evidence
+            ? new Evidence(item)
+            : new EvidenceError(item)
         })
-        tc.evidence  = [...tc.evidence, ...items]
+        tc.evidence = [...tc.evidence, ...items]
       } else {
-        evidence.identifier = identifier || tc.identifier,
-        tc.evidence.push(evidence)
+        ;(evidence.identifier = identifier || tc.identifier),
+          tc.evidence.push(evidence)
       }
       this.allEvidence.set(tc.identifier, tc)
     }
   }
-
 
   public updateTestStatus(identifier: string, status: 'Passed' | 'Failed') {
     const tc = this.getTestCase(identifier)
@@ -247,10 +232,7 @@ export class Collector {
             })
           }
         } else {
-          const evidence = this.parseEvidence(
-            fileContent.test_run_name,
-            entry,
-          )
+          const evidence = this.parseEvidence(fileContent.test_run_name, entry)
 
           fileContent.tests.push({
             id_list: tcId,
