@@ -119,6 +119,7 @@ export class Collector {
       fontWeight: 700,
       width: 900,
       marginBottom: 20,
+      maxHeight: 80
     })
     const dataImage = new UltimateTextToImage(dataStr, {
       fontSize: 14,
@@ -129,6 +130,7 @@ export class Collector {
       borderColor: '#000000',
       backgroundColor: '#F0F0F0',
       margin: 10,
+      maxHeight: 2048,
     })
     return new VerticalImage([titleImage, dataImage], {
       backgroundColor: '#FFFFFF',
