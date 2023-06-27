@@ -48,12 +48,16 @@ export class Collector {
       const microTime = getMicroTime()
       if (ev.type === EvidenceTypeEnum.IMAGE) {
         if(ev instanceof Evidence) {
-          fileContent = this.convertContentToImg(
-            title,
-            ev.data,
-            false
-          )
-          delete ev.data
+          try {
+            fileContent = this.convertContentToImg(
+              title,
+              ev.data,
+              false
+            )
+            delete ev.data
+          } catch(ex) {
+            console.log(ex)
+          }
         } else {
           fileContent = this.convertContentToImg(
             title,
@@ -115,6 +119,7 @@ export class Collector {
     const dataStr = !(typeof content === 'string') ? inspect(content) : content
     const titleImage = new UltimateTextToImage(`Test Cycle: ${header}`, {
       fontSize: 26,
+      fontFamily: 'Monospace',
       fontColor: isError ? '#FF0000' : '#000000',
       fontWeight: 700,
       width: 900,
