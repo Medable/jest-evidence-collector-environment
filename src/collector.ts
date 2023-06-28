@@ -54,7 +54,7 @@ export class Collector {
         } catch (ex) {
           console.log(ex)
         } finally {
-          ev.resource = ouputFilePath
+          ev.image = ouputFilePath
         }
       }
 
@@ -216,32 +216,35 @@ export class Collector {
 
       for (const [tcId, entry] of this.allEvidence.entries()) {
         const moreThanOneIdentifier = tcId.split(',')
+        let items = []
         if (moreThanOneIdentifier.length > 1) {
-          for (const id of moreThanOneIdentifier) {
-            const evidence = this.parseEvidence(
-              fileContent.test_run_name,
-              entry,
-              id,
-            )
-            fileContent.tests.push({
+          items = moreThanOneIdentifier.map(id => 
+            ({
               id_list: id,
               status: entry.status,
               date: entry.started,
               duration: entry.duration || 0,
-              evidence,
+              evidence: this.parseEvidence(
+                fileContent.test_run_name,
+                entry,
+                id,
+              ),
             })
-          }
+          )
+          
         } else {
-          const evidence = this.parseEvidence(fileContent.test_run_name, entry)
-
-          fileContent.tests.push({
+          items = [{
             id_list: tcId,
             status: entry.status,
             date: entry.started,
             duration: entry.duration || 0,
-            evidence,
-          })
+            evidence: this.parseEvidence(
+              fileContent.test_run_name,
+              entry
+            )
+          }]
         }
+        fileContent.tests = [...fileContent.tests, ...items]
       }
       this.writeOutputFile(fileContent)
     }

@@ -4,35 +4,37 @@ export enum EvidenceTypeEnum {
 }
 
 export interface IBaseEvidence {
-  identifier: string
+  identifier?: string
   collectedAt?: number
   resource?: string
   type?: EvidenceTypeEnum
 }
 
 export class Evidence implements IBaseEvidence {
-  identifier: string
+  identifier?: string
   collectedAt?: number | undefined
-  resource?: string | undefined
+  image?: string | undefined
   type?: EvidenceTypeEnum | undefined
   description: string
   data?: any
+  px?: number
 
   constructor(options: Partial<Evidence>) {
-    Object.assign(this, options)
+    Object.assign(this, {px:900, ...options})
   }
 }
 
 export class EvidenceError implements IBaseEvidence {
-  identifier: string
+  identifier?: string
   collectedAt?: number | undefined
-  resource?: string | undefined
+  image?: string | undefined
   type?: EvidenceTypeEnum | undefined
   message: string
   stack: string
+  px?: number;
 
   constructor(options: Partial<EvidenceError>) {
-    Object.assign(this, options)
+    Object.assign(this, {px:900, ...options})
   }
 }
 

@@ -4,7 +4,7 @@ import { Collector } from './collector';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { getMicroTime } from './utils';
 import { EnvironmentContext, JestEnvironmentConfig } from '@jest/environment';
-import { EvidenceError, EvidenceTypeEnum } from './types';
+import { Evidence, EvidenceError, EvidenceTypeEnum } from './types';
 
 jest.mock('./collector');
 jest.mock('./utils');
@@ -95,13 +95,13 @@ describe('customEnvironment', () => {
       customEnvironment.collectAsText(description, data, identifier)
 
       expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
-      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, new Evidence({
         description,
         data,
         collectedAt: expect.any(Number),
         type: EvidenceTypeEnum.TEXT,
         identifier,
-      })
+      }))
     })
 
     it('should not add evidence if test case is not found', () => {
@@ -130,13 +130,13 @@ describe('customEnvironment', () => {
       customEnvironment.collectAsImage(description, data, identifier)
 
       expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
-      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, new Evidence({
         description,
         data,
         collectedAt: expect.any(Number),
         type: EvidenceTypeEnum.IMAGE,
         identifier,
-      })
+      }))
     })
 
     it('should not add evidence if test case is not found', () => {
@@ -164,13 +164,13 @@ describe('customEnvironment', () => {
       customEnvironment.collectError(error, EvidenceTypeEnum.TEXT, identifier)
 
       expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
-      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, {
+      expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, new EvidenceError({
         message: error.message,
         stack: error.stack,
         collectedAt: expect.any(Number),
         identifier,
         type: EvidenceTypeEnum.TEXT
-      } as EvidenceError)
+      }))
     })
 
     it('should not add evidence if test case is not found', () => {

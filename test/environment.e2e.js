@@ -36,7 +36,7 @@ describe('Testing end to end environment implementation', () => {
     expect(results.tests.length).toBe(8)
     const ids = new Set(results.tests.map(t => t.id_list))
     expect(ids.size).toBe(7)
-    const resources = results.tests.map(t => t.evidence.filter(e => e.type === 'jsonImage').map(e => e.resource)).flat(2)
+    const resources = results.tests.map(t => t.evidence.filter(e => e.type === 'jsonImage').map(e => e.image)).flat(2)
     expect(resources.length).toBe(10)
     for(const res of resources) {
       expect(fs.existsSync(res)).toBeTruthy()
