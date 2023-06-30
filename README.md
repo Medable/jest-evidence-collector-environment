@@ -62,8 +62,8 @@ describe("sum", () => {
 therea are some functions that exists globaly so you can use inside tests and it will collect all evidence related with the context you have.
 the signatures are the following:
 ```
-collectAsImage(description: string, data: any, identifier?:string) : void
-collectAsText(description: string, data: any, identifier?:string) : void
+collectAsImage(description: string, data: any, type: EvidenceTypeEnum, identifier?:string) : void
+collectAsText(description: string, data: any, type: EvidenceTypeEnum, identifier?:string) : void
 collectError(err: Error, identifier?:string) : void
 ```
 Note: if you are using typescript add the following header to access the types

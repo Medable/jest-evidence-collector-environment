@@ -41,16 +41,12 @@ export class Collector {
     for (const ev of iterator) {
       let fileName!: string
       const microTime = getMicroTime()
-      if (ev.type === EvidenceTypeEnum.IMAGE) {
+      if (ev.type === EvidenceTypeEnum.IMAGE && ev instanceof Evidence) {
         fileName = `${identifier || tc.identifier}-dataImage-${microTime}.png`
         const ouputFilePath = path.join(this.options.output.folder, fileName)
         try {
-          if (ev instanceof Evidence) {
             this.convertContentToImg(title, ev.data, false, ouputFilePath)
             delete ev.data
-          } else {
-            this.convertContentToImg(title, ev.stack, true, ouputFilePath)
-          }
         } catch (ex) {
           console.log(ex)
         } finally {
@@ -180,8 +176,8 @@ export class Collector {
             identifier: p,
           }
           return evidence instanceof Evidence
-            ? new Evidence(item)
-            : new EvidenceError(item)
+            ? new Evidence(item as any)
+            : new EvidenceError(item as any)
         })
         tc.evidence = [...tc.evidence, ...items]
       } else {

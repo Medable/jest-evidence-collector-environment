@@ -57,11 +57,11 @@ export class CustomEnvironment extends NodeEnvironment {
       this.collector.addEvidence(tc, evidence)
     }
   }
-  collectError(error: Error, type: EvidenceTypeEnum = EvidenceTypeEnum.TEXT, identifier?: string) {
+  collectError(error: Error, identifier?: string) {
     const tc = this.collector.getTestCase(this.testId)
     if(tc) {
       const collectedAt = getMicroTime()
-      const evidenceError = new EvidenceError({ message: error.message, stack: error.stack, collectedAt, type, identifier })
+      const evidenceError = new EvidenceError({ message: error.message, stack: error.stack, collectedAt, identifier })
       this.collector.addEvidence(tc, evidenceError)
     }
   }
@@ -92,7 +92,7 @@ export class CustomEnvironment extends NodeEnvironment {
     if (state.currentlyRunningTest?.errors?.length) {
       const err = new Error('Error executing test')
       err.stack = JSON.stringify(state.currentlyRunningTest.errors, null, 2)
-      this.collectError(err, EvidenceTypeEnum.IMAGE, this.testId)
+      this.collectError(err, this.testId)
     }
     this.collector.updateTestStatus(this.testId, status)
     

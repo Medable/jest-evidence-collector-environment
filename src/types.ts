@@ -7,7 +7,7 @@ export interface IBaseEvidence {
   identifier?: string
   collectedAt?: number
   resource?: string
-  type?: EvidenceTypeEnum
+  type?: string
 }
 
 export class Evidence implements IBaseEvidence {
@@ -28,7 +28,7 @@ export class EvidenceError implements IBaseEvidence {
   identifier?: string
   collectedAt?: number | undefined
   image?: string | undefined
-  type?: EvidenceTypeEnum | undefined
+  type: 'error'
   message: string
   stack: string
   px?: number;
@@ -71,5 +71,5 @@ export type OutputResult = {
 declare global {
   function collectAsText(description: string, data: any, identifier?:string): void
   function collectAsImage(description: string, data: any, identifier?:string): void
-  function collectError(error: Error, type: EvidenceTypeEnum, identifier?: string): void
+  function collectError(error: Error, identifier?: string): void
 }

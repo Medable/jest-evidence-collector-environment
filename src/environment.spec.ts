@@ -161,15 +161,14 @@ describe('customEnvironment', () => {
 
       const error = new Error('Test error')
       const identifier = 'Test identifier'
-      customEnvironment.collectError(error, EvidenceTypeEnum.TEXT, identifier)
+      customEnvironment.collectError(error, identifier)
 
       expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
       expect(customEnvironment.collector.addEvidence).toHaveBeenCalledWith(tc, new EvidenceError({
         message: error.message,
         stack: error.stack,
         collectedAt: expect.any(Number),
-        identifier,
-        type: EvidenceTypeEnum.TEXT
+        identifier
       }))
     })
 
@@ -179,7 +178,7 @@ describe('customEnvironment', () => {
 
       const error = new Error('Test error')
       const identifier = 'Test identifier'
-      customEnvironment.collectError(error, EvidenceTypeEnum.TEXT, identifier)
+      customEnvironment.collectError(error, identifier)
 
       expect(customEnvironment.collector.getTestCase).toHaveBeenCalledWith(undefined) // testId is undefined initially
       expect(customEnvironment.collector.addEvidence).not.toHaveBeenCalled()
@@ -238,7 +237,6 @@ describe('customEnvironment', () => {
       const error = new Error('Error executing test')
       error.stack = JSON.stringify(state.currentlyRunningTest?.errors, null, 2)
       expect(mockCollectError).toHaveBeenCalledWith(error,
-        EvidenceTypeEnum.IMAGE,
         customEnvironment.testId
       );
     });
