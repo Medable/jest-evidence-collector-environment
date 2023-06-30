@@ -27,14 +27,12 @@ export class Evidence implements IBaseEvidence {
 export class EvidenceError implements IBaseEvidence {
   identifier?: string
   collectedAt?: number | undefined
-  image?: string | undefined
   type: 'error'
   message: string
   stack: string
-  px?: number;
 
   constructor(options: Partial<EvidenceError>) {
-    Object.assign(this, {px:900, ...options})
+    Object.assign(this, { type: 'error', ...options})
   }
 }
 
